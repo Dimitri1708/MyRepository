@@ -55,7 +55,8 @@ jobs:
         dotnet-version: ${{env.DOTNET_CORE_VERSION}}
 
     - name: Restore dependencies
-      run: dotnet restore
+      
+      run: pwd; dotnet restore
       
     - name: Build
       run: dotnet build --no-restore
