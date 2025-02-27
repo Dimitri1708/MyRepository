@@ -56,7 +56,7 @@ jobs:
 
     - name: Restore dependencies
       
-      run: pwd; dotnet restore
+      run: dotnet restore schoolProject.WebApi.csproj
       
     - name: Build
       run: dotnet build --no-restore
