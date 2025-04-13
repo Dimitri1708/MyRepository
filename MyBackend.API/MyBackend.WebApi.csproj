@@ -1,20 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework> <!-- Keep net9.0 if you have the .NET 9 preview SDK installed -->
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>c88116e4-bc8a-40bc-bdd3-04bcbee8d144</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- ASP.NET Core Packages -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Dapper" Version="2.1.66" />
-	  <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
-	  <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.2" />
+    <!-- Database and Identity Libraries -->
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Avans.Identity.DapperOrm" Version="1.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Swagger & OpenAPI -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
   </ItemGroup>
 
 </Project>

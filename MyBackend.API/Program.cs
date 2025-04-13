@@ -1,39 +1,80 @@
-﻿using schoolProject.WebApi.Repositories;
-using Microsoft.Identity.Client;
+﻿using MyBackend.WebApi.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
-builder.Services.Configure<RouteOptions>(o => o.LowercaseUrls = true);
+var connectionString = builder.Configuration.GetConnectionString("DatabaseConnection");
+var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(connectionString);
 
-var sqlConnectionString = builder.Configuration["SqlConnectionString"];
-var sqlConnectionStringFound = !string.IsNullOrEmpty(sqlConnectionString);
+if (!sqlConnectionStringFound) throw new ArgumentException("No connection string found.");
 
+// Sample
+// builder.Services.AddSingleton<I*item*Repository<Guid, *other things you may need*>, *item*Repository>(_ => new *item*Repository(connectionString ?? throw new ArgumentException("No connection string found in secrets.json")));
 
-//if (string.IsNullOrWhiteSpace(sqlConnectionString))
-//    throw new InvalidProgramException("Configuration variable SqlConnectionString not found");
+// Add services to the container.
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
+builder.Services.AddAuthentication();
 
+var requireUserPolicy = new AuthorizationPolicyBuilder()
+    .RequireAuthenticatedUser()
+    .Build();
 
-// Environment2D
-// Object2D
+builder.Services.AddAuthorizationBuilder()
+    .SetDefaultPolicy(requireUserPolicy)
+    .SetFallbackPolicy(requireUserPolicy);
 
-builder.Services.AddTransient<UserRepository, UserRepository>(o => new UserRepository(sqlConnectionString));
+builder.Services.AddSingleton<IEnvironmentRepository, EnvironmentRepository>(_ => new EnvironmentRepository(connectionString!));
+builder.Services.AddSingleton<IObjectRepository, ObjectRepository>(_ => new ObjectRepository(connectionString!));
+
+builder.Services.AddIdentityApiEndpoints<IdentityUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 10;
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+    })
+    .AddRoles<IdentityRole>()
+    .AddDapperStores(options =>
+    {
+        options.ConnectionString = builder.Configuration.GetConnectionString("DatabaseConnection");
+    });
+
+builder.Services.AddMvc().AddJsonOptions(options => { options.JsonSerializerOptions.MaxDepth = 64; });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.MapOpenApi();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-app.MapGet("/", () => $"WebApi is up 🚀. Connectionstring found: {(sqlConnectionStringFound ? "✅" : "❌")}");
 
-app.UseHttpsRedirection();
+app.MapGroup("/account").MapIdentityApi<IdentityUser>().AllowAnonymous();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers(); //.RequireAuthorization();
+
+app.MapGet("/",
+    () => $"The API is up and running. Connection string found: {(sqlConnectionStringFound ? "Yes" : "No")}");
+app.MapPost("/account/logout",
+    async (SignInManager<IdentityUser> signInManager, [FromBody] object? empty) =>
+    {
+        if (empty == null) return Results.Unauthorized();
+        await signInManager.SignOutAsync();
+        return Results.Ok();
+    });
 
 app.Run();
